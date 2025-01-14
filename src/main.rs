@@ -1,25 +1,71 @@
-use eframe::egui; // eframe egui框架
+use eframe::{egui, NativeOptions, Renderer}; // eframe egui框架
 use std::fs::{self, OpenOptions}; // 文件读写操作
-use std::io::{Read, Write}; // 文件的读写流
+use std::io::{Read, Write};
+use std::path::PathBuf;
+use std::sync::Arc;
+// 文件的读写流
 
 fn main()->Result<(), eframe::Error> {
     // 启动egui应用程序
-    let options = eframe::NativeOptions::default();
+    let options = eframe::NativeOptions {
+        renderer: Renderer::Glow,
+        ..Default::default()
+    };
     eframe::run_native(
         "Zeropad", // 窗口标题
         options, // 窗口配置选项
-        Box::new(|_cc| {
-
+        Box::new(|cc| {
+            setup_custom_fonts(&cc.egui_ctx);
             Ok(Box::new(NotepadApp::default()))
         }), // 应用实例
     )
 }
 
 // 加载中文字体
-fn setup_custom_fonts(ctx: &mut egui::Context) {
+fn setup_custom_fonts(ctx: &egui::Context) {
     use egui::FontFamily;
-    use egui::FontId;
     let mut fonts = egui::FontDefinitions::default();
+    // 获取系统字体路径
+    if let Some(font_path) = get_system_font_path("Arial Unicode") {
+        // 读取字体文件数据
+        let font_data = fs::read(font_path).expect("Failed to read font file");
+        fonts.font_data.insert("custom_font".to_owned(), Arc::from(egui::FontData::from_owned(font_data)));
+        // 将字体添加到Proportional 和 Monospace 字体中
+        fonts.families.get_mut(&FontFamily::Proportional).unwrap().insert(0, "custom_font".to_owned());
+        fonts.families.get_mut(&FontFamily::Monospace).unwrap().insert(0, "custom_font".to_owned());
+        ctx.set_fonts(fonts);
+    } else {
+        eprintln!("SystemFont Arial Unicode not found");
+    }
+}
+
+fn get_system_font_path(font_name: &str) -> Option<PathBuf> {
+    // 检查常见系统字体目录
+    let font_dirs:Vec<PathBuf> = if cfg!(target_os = "windows") {
+        vec![
+            r"C:\Windows\Fonts".into(),
+        ]
+    } else if cfg!(target_os = "macos") {
+        vec!["/System/Library/Fonts/Supplemental".into(), "/System/Library/Fonts".into()]
+    } else if cfg!(target_os = "linux") {
+        vec!["usr/share/fonts".into(), "~/.fonts".into()]
+    } else {
+        vec![]
+    };
+
+    for dir in font_dirs {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+                    if file_name.contains(font_name) {
+                        return Some(path);
+                    }
+                }
+            }
+        }
+    }
+    None
 }
 
 // 定义记事本应用程序的结构题

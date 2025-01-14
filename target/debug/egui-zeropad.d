@@ -1,1 +1,1 @@
-/Users/zero/rust_workspace/egui-zeropad/target/debug/egui-zeropad: /Users/zero/rust_workspace/egui-zeropad/src/main.rs
+/Users/zero/rust_workspace/zeropad/target/debug/egui-zeropad: /Users/zero/rust_workspace/zeropad/src/main.rs
