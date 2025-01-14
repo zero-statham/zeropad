@@ -1,0 +1,8 @@
+[package]
+name = "egui-zeropad"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.30.0"# 最新版本的eframe
+rfd = "0.15.2" # 文件对话框
